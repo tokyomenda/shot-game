@@ -1,6 +1,6 @@
 import type { Card } from "@/data/cards";
 
-type Props = { card?: Card; revealed?: boolean; leaving?: boolean; decorative?: boolean; onReveal?: () => void };
+type Props = { card?: Card & { sourceType?: string }; revealed?: boolean; leaving?: boolean; decorative?: boolean; onReveal?: () => void };
 
 export default function PlayingCard({ card, revealed = false, leaving = false, decorative = false, onReveal }: Props) {
   return (
@@ -17,7 +17,7 @@ export default function PlayingCard({ card, revealed = false, leaving = false, d
           <span className="card-corner bottom">✦</span>
         </span>
         <span className={`card-face card-front ${card?.type ?? "question"}`} aria-hidden={!revealed}>
-          <span className="card-type"><span>✦</span> {card?.type === "challenge" ? "ДААЛГАВАР" : "АСУУЛТ"}</span>
+          <span className="card-type"><span>✦</span> {card?.sourceType === "choice" ? "СОНГОЛТ" : card?.sourceType === "vote" ? "САНАЛ ӨГӨХ" : card?.type === "challenge" ? "ДААЛГАВАР" : "АСУУЛТ"}</span>
           <span className="question-mark">{card?.type === "challenge" ? "↯" : "?"}</span>
           <span className="card-content">{card?.text}</span>
           <span className="card-footer">ҮНЭНЭЭ ХЭЛ. ӨӨРИЙГӨӨ СОРЬ.<span>✦</span></span>

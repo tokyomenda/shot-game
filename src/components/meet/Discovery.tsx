@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { DiscoveryDecision, DiscoveryProfile } from "./types";
 import ProfileCard from "./ProfileCard";
 import ProfileActions from "./ProfileActions";
@@ -9,24 +9,31 @@ import QuestionCard from "./QuestionCard";
 import ContactUnlock from "./ContactUnlock";
 import styles from "../social/Social.module.css";
 
-export default function Discovery({ profiles }: { profiles: readonly DiscoveryProfile[] }) {
+export default function Discovery({ profiles, mode = "demo", onDecision, onRefresh }: { profiles: readonly DiscoveryProfile[]; mode?: "demo" | "live"; onDecision?: (id: string, decision: DiscoveryDecision) => Promise<void>; onRefresh?: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const locked = useRef(false);
   const [index, setIndex] = useState(0);
   const [notice, setNotice] = useState("");
   const profile = profiles[index];
 
-  function decide(decision: DiscoveryDecision) {
-    if (!profile) return;
-    setNotice(decision === "interested" ? `${profile.name}-г сонирхсон сонголтыг туршлаа. Энэ нь demo тул хадгалагдахгүй, match үүсэхгүй.` : `${profile.name}-г алгаслаа.`);
-    setIndex(current => current + 1);
+  async function decide(decision: DiscoveryDecision) {
+    if (!profile || locked.current) return;
+    locked.current = true; setBusy(true);
+    try {
+      await onDecision?.(profile.id, decision);
+      setNotice(decision === "interested" ? mode === "live" ? `${profile.name}-г сонирхсон сонголт хадгалагдлаа. Match хэсэг дараа нээгдэнэ.` : `${profile.name}-г сонирхсон сонголтыг туршлаа. Demo тул хадгалагдахгүй.` : `${profile.name}-г алгаслаа.`);
+      setIndex(current => current + 1);
+    } catch { setNotice("Сонголтыг хадгалж чадсангүй. Холболтоо шалгаад дахин оролдоно уу."); }
+    finally { locked.current = false; setBusy(false); }
   }
 
   return <main className={styles.discovery}>
-    <div className={styles.discoveryHeading}><div><div className={styles.kicker}>ШИНЭ ХҮН. ШИНЭ ТҮҮХ.</div><h1>ТАНИЛЦАХ <span>УУ?</span></h1></div><span className={styles.previewTag}>ТУРШИЛТЫН ЗАГВАР</span></div>
+    <div className={styles.discoveryHeading}><div><div className={styles.kicker}>ШИНЭ ХҮН. ШИНЭ ТҮҮХ.</div><h1>ТАНИЛЦАХ <span>УУ?</span></h1></div><span className={styles.previewTag}>{mode === "demo" ? "ТУРШИЛТЫН ЗАГВАР" : "ШИНЭ ТАНИЛУУД"}</span></div>
     <div className={styles.discoveryGrid}>
       <section className={styles.profileColumn} aria-label="Хүмүүстэй танилцах">
         <div className={styles.profileCounter}><span>НЭГ ТАНИЛААС БҮХЭН ЭХЭЛНЭ</span><span>{String(Math.min(index + 1, profiles.length)).padStart(2, "0")} / {String(profiles.length).padStart(2, "0")}</span></div>
-        {profile ? <><ProfileCard key={profile.id} profile={profile} /><ProfileActions onDecide={decide} /></> : <div className={styles.empty}><span>✦</span><h2>Өнөөдрийн танилуудтай<br />танилцаж дууслаа.</h2><p>Энэ бол танилцах хэсгийн загвар.<br />Шинэ түүхүүд удахгүй нэмэгдэнэ.</p><button onClick={() => { setIndex(0); setNotice(""); }}>Дахин үзэх ↻</button></div>}
-        <p className={styles.notice} role="status">{notice || "Зохиомол нэр, жишээ зурагтай demo профайлууд."}</p>
+        {profile ? <><ProfileCard key={profile.id} profile={profile} demo={mode === "demo"} /><ProfileActions onDecide={decide} disabled={busy} /></> : <div className={styles.empty}><span>✦</span><h2>Одоогоор өөр<br />профайл алга.</h2><p>{mode === "demo" ? "Энэ бол танилцах хэсгийн загвар." : "Дараа дахин шалгаарай. Шинэ танилууд нэмэгдэнэ."}</p><button onClick={() => { if (onRefresh) onRefresh(); else { setIndex(0); setNotice(""); } }}>Дахин үзэх ↻</button></div>}
+        <p className={styles.notice} role="status">{notice || (mode === "demo" ? "Зохиомол нэр, жишээ зурагтай demo профайлууд." : "Алгасах сонголт энэ үзэлтийн хугацаанд үйлчилнэ.")}</p>
       </section>
       <aside className={styles.journey}>
         <div className={styles.kicker}>ТАНИЛЦАХ ӨӨР НЭГ АРГА</div><h2>Зүгээр нэг мэндээс<br /><em>илүүг мэдэр.</em></h2>

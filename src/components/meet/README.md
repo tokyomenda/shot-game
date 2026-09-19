@@ -1,12 +1,9 @@
-# Discovery prototype
+# Meet foundation
 
-Discovery owns temporary browser state only. ProfileCard and ProfileActions receive typed props; data is supplied by the /meet server page. Replace demoProfiles with a server-side public-profile query when connecting Supabase. No authentication, persistence, matching, chat or contact exchange is implemented.
+MeetExperience manages browser authentication and resets member state on user changes. AuthScreen supports email/password signup/login and confirmation-required feedback. ProfileSetup validates inputs and uploads to a private bucket, then saves profile and contact data through one RLS-enforced transaction.
 
-Future server-enforced flow:
-1. Create a match only after both participants express interest.
-2. Assign a system question for level 1. Keep answers private until both submit.
-3. Reveal both answers together, then unlock the next question, through level 10.
-4. After both complete level 10, collect separate contact-exchange consent from each participant.
-5. Release contact information only when both have consented.
+src/lib/supabase/browser.ts is the reusable publishable-key client. src/lib/meet/repository.ts owns data access; validation.ts owns browser validation (database constraints independently enforce validation).
 
-Use separate private answer and contact records with participant-scoped RLS and server-side authorization. Never send unrevealed answers or locked contact fields to the client. DiscoveryProfile intentionally contains no contact fields. Do not add direct messaging. LevelProgress, QuestionCard and ContactUnlock currently illustrate the future flow; they are not authorization controls.
+Discovery retains its demo mode (default) and existing visual components. /meet supplies real rows, uses live mode and persists interest. Mock profiles remain in src/data/profiles.ts for visual development and are never substituted for a database failure or empty results.
+
+Manual schema, dashboard settings and security verification steps: supabase/README.md. No matches, chat, answer reveal or contact unlock is implemented. QuestionCard, LevelProgress and ContactUnlock remain future-flow previews.
